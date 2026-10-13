@@ -365,13 +365,30 @@
   </div>
 </div>
 
+<div id="report-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:#ffffff; max-width:540px; width:100%; border-radius:16px; padding:1.4rem; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">📄 Health / Medical Report Analyzer</h3>
+      <button onclick="closeReportModal()" style="background:none; border:none; color:var(--text-secondary); font-size:1.2rem; cursor:pointer; padding:0.2rem 0.5rem;">✕</button>
+    </div>
+    <p style="margin:0 0 0.8rem; font-size:0.88rem; color:var(--text-secondary); line-height:1.4;">Paste your lab results, blood work numbers, or medical summary below. The agent will extract key biomarkers, flag reference ranges, and advise lifestyle adjustments:</p>
+    <textarea id="report-text-input" rows="6" style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:0.9rem; resize:vertical; outline:none; box-sizing:border-box;" placeholder="e.g. Fasting Blood Glucose: 108 mg/dL (Normal: 70-99)&#10;HbA1c: 5.8% (Prediabetes: 5.7-6.4%)&#10;Total Cholesterol: 215 mg/dL&#10;Vitamin D (25-OH): 22 ng/mL (Normal: 30-100)"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-top:1rem;">
+      <button onclick="closeReportModal()" style="background:#f1f5f9; color:var(--text-secondary); padding:0.6rem 1rem;">Cancel</button>
+      <button onclick="submitReportAnalysis()" style="background:var(--accent); color:#fff; padding:0.6rem 1.2rem;">Analyze Report</button>
+    </div>
+  </div>
+</div>
+
 <div class="footer-container">
   <div class="prompt-chips">
     <div class="chip" onclick="applyPrompt('What pending tasks do I have scheduled for today?')">📋 Pending Tasks</div>
+    <div class="chip" onclick="applyPrompt('Show my AI Engineer career roadmap, milestones, and what projects I should tackle next.')">🤖 AI Engineer Roadmap</div>
+    <div class="chip" onclick="applyPrompt('Analyze my daily caloric balance and weight loss progress. Give alternatives if I exceeded intake.')">🥗 Calorie & Health Coach</div>
+    <div class="chip" onclick="openReportModal()">📎 Analyze Medical Report</div>
+    <div class="chip" onclick="applyPrompt('Log meal intake: 2 slices pizza and soda, 850 kcal, 22g protein for lunch.')">🍕 Log Meal Intake</div>
     <div class="chip" onclick="applyPrompt('Summarize my expenses this month by category.')">💳 Expense Breakdown</div>
-    <div class="chip" onclick="applyPrompt('Log an expense: $18.50 for dinner under food.')">💸 Log $18.50 Dinner</div>
     <div class="chip" onclick="applyPrompt('Plan my morning schedule based on my pending high priority tasks and peak focus window.')">☀️ Focus Schedule</div>
-    <div class="chip" onclick="applyPrompt('What are my stored preferences and routines in Firestore memory?')">🧠 Stored Memories</div>
   </div>
   <form id="form">
     <input id="input" placeholder="Ask your Smart Tracker Agent…" autocomplete="off" autofocus>
@@ -529,12 +546,29 @@ function renderReply(b, parts) {
   log.scrollTop = log.scrollHeight;
 }
 
-form.addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const text = input.value.trim();
-  if (!text) return;
+function openReportModal() {
+  document.getElementById("report-modal").style.display = "flex";
+  document.getElementById("report-text-input").focus();
+}
+
+function closeReportModal() {
+  document.getElementById("report-modal").style.display = "none";
+}
+
+async function submitReportAnalysis() {
+  const txt = document.getElementById("report-text-input").value.trim();
+  if (!txt) return;
+  closeReportModal();
+  document.getElementById("report-text-input").value = "";
+  await sendChatMessage("Analyze this medical/health report and extract biomarkers with reference ranges:\n\n" + txt);
+}
+
+window.completeTaskAction = async function(taskId) {
+  await sendChatMessage(`Mark task ${taskId} as completed.`);
+};
+
+async function sendChatMessage(text) {
   bubble("user").textContent = text;
-  input.value = "";
   const b = bubble("agent"); b.textContent = "…";
   try {
     const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
@@ -546,6 +580,14 @@ form.addEventListener("submit", async (ev) => {
   } catch (e) {
     b.textContent = "Error: " + e.message;
   }
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  await sendChatMessage(text);
 });
 </script>
 </body>

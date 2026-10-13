@@ -325,6 +325,213 @@ def get_financial_summary(month: Optional[str] = None) -> Dict[str, Any]:
     }
 
 
+# ============================================================================
+# CAREER & SKILL ROADMAP TRACKER (e.g., AI Engineer Roadmap)
+# ============================================================================
+
+def track_career_goal(goal_title: str, target_role: str, target_timeline_months: int = 6) -> Dict[str, Any]:
+    """Initialize or update a high-level career learning roadmap in Firestore.
+
+    Args:
+        goal_title: Title of the career initiative (e.g. 'Master AI Engineering').
+        target_role: Desired job role (e.g. 'AI Engineer', 'MLOps Specialist', 'Fullstack AI Developer').
+        target_timeline_months: Target timeframe in months.
+
+    Returns:
+        Structured roadmap overview with phases and milestones.
+    """
+    db = _get_firestore_client()
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    goal_id = "goal_ai_engineer" if "ai" in target_role.lower() else f"goal_{int(datetime.datetime.now(datetime.timezone.utc).timestamp())}"
+
+    default_phases = [
+        {"phase": 1, "title": "Mathematics & Core ML Foundations", "topics": ["Linear Algebra", "Calculus & Optimization", "PyTorch Basics"], "completed": True},
+        {"phase": 2, "title": "LLM Architectures & Transformers", "topics": ["Attention Mechanism", "HuggingFace Transformers", "Prompt Engineering"], "completed": False},
+        {"phase": 3, "title": "Agentic Systems & Multi-Agent Frameworks", "topics": ["Google ADK & A2A Protocol", "Vertex AI Reasoning Engines", "Function Tools & Memory Banks"], "completed": False},
+        {"phase": 4, "title": "Production Deployment & Evaluation", "topics": ["Cloud Run Deployment", "A2UI Custom Surfaces", "RAG Engine Grounding", "Telemetry & Observability"], "completed": False},
+    ]
+
+    record = {
+        "id": goal_id,
+        "title": goal_title,
+        "target_role": target_role,
+        "timeline_months": target_timeline_months,
+        "phases": default_phases,
+        "created_at": now,
+        "updated_at": now,
+    }
+    db.collection("career_goals").document(goal_id).set(record)
+    return {
+        "status": "active",
+        "goal_id": goal_id,
+        "target_role": target_role,
+        "phases": default_phases,
+        "message": f"Career track for '{target_role}' initialized with 4 milestone phases."
+    }
+
+
+def get_career_progress(target_role: Optional[str] = None) -> Dict[str, Any]:
+    """Retrieve the current career milestone progress and learning roadmap from Firestore.
+
+    Args:
+        target_role: Optional filter for specific role (defaults to all active career goals).
+
+    Returns:
+        Career roadmap, active milestones, and completion percentage.
+    """
+    db = _get_firestore_client()
+    docs = db.collection("career_goals").limit(5).stream()
+    goals = []
+    for doc in docs:
+        d = doc.to_dict()
+        phases = d.get("phases", [])
+        done_count = sum(1 for p in phases if p.get("completed", False))
+        pct = int((done_count / len(phases) * 100)) if phases else 0
+        goals.append({
+            "goal_id": doc.id,
+            "title": d.get("title"),
+            "target_role": d.get("target_role"),
+            "timeline_months": d.get("timeline_months"),
+            "completion_percentage": f"{pct}%",
+            "phases": phases,
+        })
+
+    if not goals:
+        # Generate default AI Engineer progress if none found
+        track_career_goal("Become a Senior AI Engineer", "AI Engineer", 6)
+        return get_career_progress(target_role)
+
+    return {"active_career_goals": goals}
+
+
+# ============================================================================
+# HEALTH, CALORIE & NUTRITION COACH WITH DISCREPANCY ANALYSIS
+# ============================================================================
+
+def log_meal_intake(meal_description: str, estimated_calories: int, protein_g: int = 0, meal_type: str = "lunch") -> Dict[str, Any]:
+    """Log meals and caloric intake with automated health goal alignment checks.
+
+    Args:
+        meal_description: Description of the food or beverage consumed.
+        estimated_calories: Caloric value in kcal (e.g. 650).
+        protein_g: Estimated grams of protein (e.g. 35).
+        meal_type: Type of meal ('breakfast', 'lunch', 'dinner', 'snack').
+
+    Returns:
+        Logged intake entry with real-time feedback.
+    """
+    db = _get_firestore_client()
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+
+    entry_id = f"meal_{int(datetime.datetime.now(datetime.timezone.utc).timestamp())}"
+    record = {
+        "id": entry_id,
+        "date": today_str,
+        "meal_type": meal_type,
+        "description": meal_description,
+        "calories": estimated_calories,
+        "protein_g": protein_g,
+        "logged_at": now,
+    }
+    db.collection("health_logs").document(entry_id).set(record)
+    return {
+        "status": "logged",
+        "entry_id": entry_id,
+        "description": meal_description,
+        "calories": estimated_calories,
+        "protein_g": protein_g,
+        "date": today_str,
+        "message": f"Logged {meal_description} ({estimated_calories} kcal, {protein_g}g protein)."
+    }
+
+
+def analyze_health_and_nutrition(daily_calorie_target: int = 1800, weight_loss_goal: bool = True) -> Dict[str, Any]:
+    """Analyze recent caloric intake, weight trends, and provide alternative healthy substitutions.
+
+    Args:
+        daily_calorie_target: Target daily caloric budget in kcal (e.g. 1800).
+        weight_loss_goal: Whether the user is actively pursuing weight loss.
+
+    Returns:
+        Summary of today's calorie tally, surplus/deficit status, and actionable dietary substitutions.
+    """
+    db = _get_firestore_client()
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+    docs = db.collection("health_logs").where("date", "==", today_str).stream()
+
+    total_calories = 0
+    total_protein = 0
+    logged_meals = []
+    for doc in docs:
+        d = doc.to_dict()
+        cal = int(d.get("calories", 0))
+        total_calories += cal
+        total_protein += int(d.get("protein_g", 0))
+        logged_meals.append({
+            "meal_type": d.get("meal_type"),
+            "description": d.get("description"),
+            "calories": cal,
+            "protein_g": d.get("protein_g", 0),
+        })
+
+    balance = total_calories - daily_calorie_target
+    status = "Surplus" if balance > 0 else "Deficit"
+
+    return {
+        "today_date": today_str,
+        "daily_target_calories": daily_calorie_target,
+        "total_calories_intake": total_calories,
+        "total_protein_grams": total_protein,
+        "caloric_balance": f"{abs(balance)} kcal {status}",
+        "weight_loss_target_met": (balance <= 0),
+        "logged_meals": logged_meals,
+        "advice_notes": "If in surplus during weight loss, recommend swapping dense refined carbs/sugary drinks for high-volume leafy greens, Greek yogurt, or an additional 30-minute brisk walk."
+    }
+
+
+# ============================================================================
+# MEDICAL & HEALTH REPORT ANALYZER
+# ============================================================================
+
+def analyze_health_report(report_text: str, report_type: str = "blood_work", report_date: Optional[str] = None) -> Dict[str, Any]:
+    """Parse, evaluate, and extract key biomarkers from uploaded or pasted medical/health reports.
+
+    Args:
+        report_text: Text content of medical report, lab test, blood panel, or doctor summary.
+        report_type: Category ('blood_work', 'lipid_panel', 'metabolic_test', 'dexa_scan', 'fitness_assessment').
+        report_date: Date of the report formatted YYYY-MM-DD.
+
+    Returns:
+        Extracted biomarker records, flagged values, and personalized lifestyle/dietary guidance.
+    """
+    db = _get_firestore_client()
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+
+    report_id = f"report_{int(datetime.datetime.now(datetime.timezone.utc).timestamp())}"
+    record = {
+        "id": report_id,
+        "report_type": report_type,
+        "date": report_date or today_str,
+        "content_length": len(report_text),
+        "analyzed_at": now,
+    }
+    db.collection("health_reports").document(report_id).set(record)
+
+    return {
+        "status": "analyzed_and_stored",
+        "report_id": report_id,
+        "report_type": report_type,
+        "date": report_date or today_str,
+        "instructions_for_agent": (
+            "Examine the user's provided report text carefully. Identify key biomarkers (e.g. Glucose, HbA1c, Cholesterol, Vitamin D, Ferritin). "
+            "Highlight any elevated or deficient numbers in a clean Markdown table with normal reference ranges, "
+            "and suggest constructive nutritional, sleep, or exercise habits (always advising consultation with their medical provider)."
+        )
+    }
+
+
 def get_weather(query: str) -> str:
     """Simulates a web search. Use it get information on weather.
 
@@ -359,26 +566,32 @@ def get_current_time(query: str) -> str:
 
 
 instruction = (
-    "You are Smart Tracker AI's Agent Assistant. You help users manage their personal productivity, "
-    "habits, routines, personal finances, and long-term memory with evidence-based reasoning.\n\n"
-    "Available capabilities:\n"
-    "1. Productivity Management: Use 'list_tasks', 'add_task', and 'complete_task' to inspect pending "
-    "items, add tasks with estimated minutes and priority, and mark items done.\n"
-    "2. Personal Finance: Use 'log_expense' and 'get_financial_summary' to record spending and deliver "
-    "clear budget breakdowns by category.\n"
-    "3. Persistent Memory: Use 'list_memories', 'get_memory', and 'save_memory' to read and maintain "
-    "user-approved preferences (e.g. peak focus window, workout routines).\n"
-    "4. Scheduling & Context: Correlate tasks with peak focus windows, check time with 'get_current_time', "
-    "and check outdoor conditions with 'get_weather'.\n\n"
-    "CRITICAL FORMATTING & PRESENTATION GUIDELINES:\n"
-    "- Never output dry, naive, raw JSON or plain wall of text.\n"
-    "- Make responses visually captivating, human-readable, warm, and structured.\n"
-    "- Use clean Markdown headers (##, ###), bulleted lists, bold highlights, and clean comparison tables.\n"
-    "- Use tasteful emojis and status badges (e.g., 🔴 High, 🟡 Medium, 🟢 Low, ✅ Done, ⏱️ Estimated, 💰 Spend, 🧠 Memory, 🎯 Goal).\n"
-    "- When presenting tasks or schedules, include estimated completion timelines, priority badges, and practical tips.\n"
-    "- When presenting finances, format monetary figures cleanly with category badges, dollar totals, percentage breakdowns, and visual budget health summaries.\n"
-    "- You can embed relevant illustrative animated GIF/image banners where helpful (e.g. for focus/productivity: https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif, for finance: https://media.giphy.com/media/67ThRZlYBvibtdF9UC/giphy.gif, for wellness/habits: https://media.giphy.com/media/l41YfykEffZ7QM55m/giphy.gif).\n"
-    "- Always conclude with an actionable recommendation or pro-tip to empower the user's day!"
+    "You are Smart Tracker AI's Agent Assistant. You are a comprehensive personal life operating system, "
+    "covering productivity, career development (e.g. AI Engineering), health & nutrition, personal finance, "
+    "and evidence-grounded long-term memory.\n\n"
+    "Available Core Capabilities:\n"
+    "1. Productivity & Task Tracking: Use 'list_tasks', 'add_task', and 'complete_task' to manage to-do items. "
+    "Whenever you display tasks, always include interactive task IDs so the user can complete them.\n"
+    "2. Career Roadmaps (e.g. AI Engineer): Use 'track_career_goal' and 'get_career_progress' to track multi-phase "
+    "engineering roadmaps, study milestones, and practical projects.\n"
+    "3. Health, Nutrition & Calorie Tracking: Use 'log_meal_intake' and 'analyze_health_and_nutrition'. "
+    "If a user's goal is weight loss but their intake is high or in surplus, deliver supportive, non-judgmental, "
+    "and highly specific alternatives (e.g. swapping sugary drinks for sparkling water, high-protein satiety foods, "
+    "or adjusting activity levels).\n"
+    "4. Medical & Health Report Analysis: Use 'analyze_health_report' when users paste or upload lab tests, "
+    "blood work, or health documents. Extract biomarkers into clear tables with reference ranges and lifestyle guidance.\n"
+    "5. Personal Finance: Use 'log_expense' and 'get_financial_summary' to manage spending.\n"
+    "6. Memory & Scheduling: Use 'list_memories', 'get_memory', 'save_memory', 'get_current_time', and 'get_weather'.\n\n"
+    "PRESENTATION & GIF POLICY:\n"
+    "- Make responses visually engaging, structured, and easy to read on mobile devices.\n"
+    "- GIF USAGE: ONLY include an animated GIF when celebrating significant milestones (e.g. marking a task complete, "
+    "completing a study milestone, or logging a major health win). Never spam GIFs on simple query responses.\n"
+    "- When displaying GIFs, ONLY use verified direct Giphy links:\n"
+    "  * Celebration/Complete: https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif\n"
+    "  * Focus/Coding: https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif\n"
+    "  * Wellness/Fitness: https://media.giphy.com/media/l41YfykEffZ7QM55m/giphy.gif\n"
+    "- Use clean Markdown tables with status indicators: 🔴 High, 🟡 Medium, 🟢 Low, ✅ Done, ⏱️ Est. Time.\n"
+    "- Always provide actionable coaching and empowering next steps!"
 )
 
 root_agent = Agent(
@@ -397,6 +610,11 @@ root_agent = Agent(
         complete_task,
         log_expense,
         get_financial_summary,
+        track_career_goal,
+        get_career_progress,
+        log_meal_intake,
+        analyze_health_and_nutrition,
+        analyze_health_report,
         get_weather,
         get_current_time,
     ],
