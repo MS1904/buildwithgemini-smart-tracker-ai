@@ -144,6 +144,187 @@ def save_memory(
         }
 
 
+# ============================================================================
+# PERSONAL PRODUCTIVITY TOOLS
+# ============================================================================
+
+def list_tasks(completed: Optional[bool] = None, priority: Optional[str] = None) -> List[Dict[str, Any]]:
+    """List tasks from the user's personal task manager in Firestore.
+
+    Args:
+        completed: Optional filter for completion status (True or False). None returns all.
+        priority: Optional filter by priority ('high', 'medium', 'low').
+
+    Returns:
+        List of tasks with title, priority, due date, estimated minutes, and status.
+    """
+    db = _get_firestore_client()
+    query = db.collection("tasks")
+    if completed is not None:
+        query = query.where(filter=firestore.FieldFilter("completed", "==", completed))
+    if priority:
+        query = query.where(filter=firestore.FieldFilter("priority", "==", priority.lower()))
+
+    tasks = []
+    for doc in query.stream():
+        d = doc.to_dict()
+        tasks.append({
+            "id": doc.id,
+            "title": d.get("title"),
+            "category": d.get("category", "general"),
+            "priority": d.get("priority", "medium"),
+            "estimated_minutes": d.get("estimated_minutes", 30),
+            "due_date": d.get("due_date"),
+            "completed": d.get("completed", False),
+        })
+    return tasks
+
+
+def add_task(title: str, priority: str = "medium", estimated_minutes: int = 30, due_date: Optional[str] = None, category: str = "general") -> Dict[str, Any]:
+    """Add a new task to the user's personal productivity tracker.
+
+    Args:
+        title: Title/description of the task to be done.
+        priority: Task priority level ('high', 'medium', 'low').
+        estimated_minutes: Estimated time in minutes required for this task.
+        due_date: Due date formatted as YYYY-MM-DD (defaults to today if omitted).
+        category: Task category ('work', 'learning', 'health', 'finance', etc.).
+
+    Returns:
+        Confirmation dictionary with the newly generated task ID and details.
+    """
+    db = _get_firestore_client()
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+
+    task_id = f"task_{int(datetime.datetime.now(datetime.timezone.utc).timestamp())}"
+    task_record = {
+        "id": task_id,
+        "title": title,
+        "category": category,
+        "priority": priority.lower(),
+        "estimated_minutes": estimated_minutes,
+        "due_date": due_date or today_str,
+        "completed": False,
+        "created_at": now,
+        "updated_at": now,
+    }
+    db.collection("tasks").document(task_id).set(task_record)
+    return {
+        "status": "created",
+        "task_id": task_id,
+        "title": title,
+        "message": f"Successfully created task '{title}' ({priority} priority, {estimated_minutes} min)."
+    }
+
+
+def complete_task(task_id: str) -> Dict[str, Any]:
+    """Mark a task as completed in the user's productivity tracker.
+
+    Args:
+        task_id: Unique identifier of the task (e.g. 'task_1').
+
+    Returns:
+        Status dictionary confirming completion.
+    """
+    db = _get_firestore_client()
+    doc_ref = db.collection("tasks").document(task_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        return {"status": "not_found", "message": f"Task '{task_id}' not found."}
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    doc_ref.update({"completed": True, "updated_at": now})
+    return {"status": "completed", "task_id": task_id, "message": f"Task '{task_id}' marked as completed."}
+
+
+# ============================================================================
+# PERSONAL FINANCE TOOLS
+# ============================================================================
+
+def log_expense(amount: float, category: str, description: str, date: Optional[str] = None) -> Dict[str, Any]:
+    """Log an expense into the user's personal finance tracker in Firestore.
+
+    Args:
+        amount: Dollar amount of the transaction (e.g. 14.50).
+        category: Expense category ('food', 'transport', 'learning', 'housing', 'entertainment', etc.).
+        description: Merchant or short explanation of the purchase.
+        date: Transaction date formatted as YYYY-MM-DD (defaults to today if omitted).
+
+    Returns:
+        Confirmation dictionary with the recorded expense ID.
+    """
+    db = _get_firestore_client()
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+
+    exp_id = f"exp_{int(datetime.datetime.now(datetime.timezone.utc).timestamp())}"
+    exp_record = {
+        "id": exp_id,
+        "amount": round(float(amount), 2),
+        "category": category.lower(),
+        "description": description,
+        "date": date or today_str,
+        "created_at": now,
+    }
+    db.collection("finances").document(exp_id).set(exp_record)
+    return {
+        "status": "logged",
+        "expense_id": exp_id,
+        "amount": exp_record["amount"],
+        "category": exp_record["category"],
+        "description": description,
+        "message": f"Recorded expense of ${exp_record['amount']} for '{description}' under '{exp_record['category']}'."
+    }
+
+
+def get_financial_summary(month: Optional[str] = None) -> Dict[str, Any]:
+    """Calculate an aggregated financial breakdown of expenses by category and total spend.
+
+    Args:
+        month: Optional month filter string 'YYYY-MM' (e.g. '2026-10'). Defaults to current month.
+
+    Returns:
+        Dictionary with total spend, category-by-category breakdown, transaction count, and recent items.
+    """
+    db = _get_firestore_client()
+    today = datetime.datetime.now(datetime.timezone.utc)
+    target_prefix = month or today.strftime("%Y-%m")
+
+    query = db.collection("finances").stream()
+    total_spent = 0.0
+    category_totals: Dict[str, float] = {}
+    items = []
+
+    for doc in query:
+        d = doc.to_dict()
+        doc_date = d.get("date", "")
+        if doc_date.startswith(target_prefix):
+            amt = float(d.get("amount", 0.0))
+            cat = d.get("category", "uncategorized")
+            total_spent += amt
+            category_totals[cat] = category_totals.get(cat, 0.0) + amt
+            items.append({
+                "id": doc.id,
+                "amount": amt,
+                "category": cat,
+                "description": d.get("description", ""),
+                "date": doc_date,
+            })
+
+    # Round totals
+    total_spent = round(total_spent, 2)
+    breakdown = {k: round(v, 2) for k, v in category_totals.items()}
+
+    return {
+        "month": target_prefix,
+        "total_spent": total_spent,
+        "transaction_count": len(items),
+        "category_breakdown": breakdown,
+        "recent_expenses": items[-5:],
+    }
+
+
 def get_weather(query: str) -> str:
     """Simulates a web search. Use it get information on weather.
 
@@ -178,11 +359,18 @@ def get_current_time(query: str) -> str:
 
 
 instruction = (
-    "You are Smart Tracker AI's Agent Assistant. You help users manage tasks, routines, and preferences. "
-    "You have access to a persistent Firestore memory database where user-approved preferences, routines, "
-    "and goal context are stored. Use the list_memories, get_memory, and save_memory tools to inspect, "
-    "retrieve, and remember relevant user context when answering.\n\n"
-    "When answering, you may return structured A2UI v0.8 JSON cards, or clear formatted markdown summaries."
+    "You are Smart Tracker AI's Agent Assistant. You help users manage their personal productivity, "
+    "habits, routines, personal finances, and long-term memory with evidence-based reasoning.\n\n"
+    "Available capabilities:\n"
+    "1. Productivity Management: Use 'list_tasks', 'add_task', and 'complete_task' to inspect pending "
+    "items, add tasks with estimated minutes and priority, and mark items done.\n"
+    "2. Personal Finance: Use 'log_expense' and 'get_financial_summary' to record spending and deliver "
+    "clear budget breakdowns by category.\n"
+    "3. Persistent Memory: Use 'list_memories', 'get_memory', and 'save_memory' to read and maintain "
+    "user-approved preferences (e.g. peak focus window, workout routines).\n"
+    "4. Scheduling & Context: Correlate tasks with peak focus windows, check time with 'get_current_time', "
+    "and check outdoor conditions with 'get_weather'.\n\n"
+    "When answering, provide clear, concise markdown formatting or structured A2UI v0.8 cards."
 )
 
 root_agent = Agent(
@@ -192,7 +380,18 @@ root_agent = Agent(
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
     instruction=instruction,
-    tools=[list_memories, get_memory, save_memory, get_weather, get_current_time],
+    tools=[
+        list_memories,
+        get_memory,
+        save_memory,
+        list_tasks,
+        add_task,
+        complete_task,
+        log_expense,
+        get_financial_summary,
+        get_weather,
+        get_current_time,
+    ],
     after_model_callback=a2ui_callback,
 )
 
