@@ -370,7 +370,15 @@ instruction = (
     "user-approved preferences (e.g. peak focus window, workout routines).\n"
     "4. Scheduling & Context: Correlate tasks with peak focus windows, check time with 'get_current_time', "
     "and check outdoor conditions with 'get_weather'.\n\n"
-    "When answering, provide clear, concise markdown formatting or structured A2UI v0.8 cards."
+    "CRITICAL FORMATTING & PRESENTATION GUIDELINES:\n"
+    "- Never output dry, naive, raw JSON or plain wall of text.\n"
+    "- Make responses visually captivating, human-readable, warm, and structured.\n"
+    "- Use clean Markdown headers (##, ###), bulleted lists, bold highlights, and clean comparison tables.\n"
+    "- Use tasteful emojis and status badges (e.g., 🔴 High, 🟡 Medium, 🟢 Low, ✅ Done, ⏱️ Estimated, 💰 Spend, 🧠 Memory, 🎯 Goal).\n"
+    "- When presenting tasks or schedules, include estimated completion timelines, priority badges, and practical tips.\n"
+    "- When presenting finances, format monetary figures cleanly with category badges, dollar totals, percentage breakdowns, and visual budget health summaries.\n"
+    "- You can embed relevant illustrative animated GIF/image banners where helpful (e.g. for focus/productivity: https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif, for finance: https://media.giphy.com/media/67ThRZlYBvibtdF9UC/giphy.gif, for wellness/habits: https://media.giphy.com/media/l41YfykEffZ7QM55m/giphy.gif).\n"
+    "- Always conclude with an actionable recommendation or pro-tip to empower the user's day!"
 )
 
 root_agent = Agent(

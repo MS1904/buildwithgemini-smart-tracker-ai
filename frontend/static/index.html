@@ -9,6 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Marked.js for rich markdown & media rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 <style>
   :root {
     --accent: #059669; /* Emerald Green */
@@ -123,8 +126,7 @@
     background: var(--card-bg);
     border: 1px solid var(--border);
     text-align: left;
-    white-space: pre-wrap;
-    line-height: 1.5;
+    line-height: 1.6;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
   .msg.user .bubble {
@@ -132,9 +134,57 @@
     color: #ffffff;
     border: none;
     border-bottom-right-radius: 4px;
+    white-space: pre-wrap;
   }
   .msg.agent .bubble {
     border-bottom-left-radius: 4px;
+  }
+  .msg.agent .bubble p { margin: 0.5rem 0; }
+  .msg.agent .bubble p:first-child { margin-top: 0; }
+  .msg.agent .bubble p:last-child { margin-bottom: 0; }
+  .msg.agent .bubble h1, .msg.agent .bubble h2, .msg.agent .bubble h3 {
+    margin: 0.9rem 0 0.4rem;
+    color: var(--accent-dark);
+    font-weight: 700;
+  }
+  .msg.agent .bubble h2 { font-size: 1.15rem; }
+  .msg.agent .bubble h3 { font-size: 1.02rem; }
+  .msg.agent .bubble ul, .msg.agent .bubble ol {
+    margin: 0.4rem 0 0.6rem;
+    padding-left: 1.4rem;
+  }
+  .msg.agent .bubble li { margin-bottom: 0.25rem; }
+  .msg.agent .bubble hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.8rem 0;
+  }
+  .msg.agent .bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.8rem 0;
+    font-size: 0.9rem;
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .msg.agent .bubble th, .msg.agent .bubble td {
+    padding: 0.55rem 0.85rem;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .msg.agent .bubble th {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-weight: 600;
+  }
+  .msg.agent .bubble img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin: 0.6rem 0;
+    display: block;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   }
   .bubble.rich {
     background: transparent;
@@ -409,8 +459,20 @@ function renderReply(b, parts) {
   const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
   const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
 
-  const textStr = texts.join("\n").trim();
-  if (textStr) b.appendChild(el("div", null, textStr));
+  const textStr = texts.join("\n\n").trim();
+  if (textStr) {
+    const textContainer = el("div", "markdown-body");
+    try {
+      if (window.marked && window.DOMPurify) {
+        textContainer.innerHTML = DOMPurify.sanitize(marked.parse(textStr));
+      } else {
+        textContainer.textContent = textStr;
+      }
+    } catch (err) {
+      textContainer.textContent = textStr;
+    }
+    b.appendChild(textContainer);
+  }
 
   if (a2ui.length) {
     b.classList.add("rich");
