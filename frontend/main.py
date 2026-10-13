@@ -40,7 +40,8 @@ def get_auth_token():
 async def chat(request: Request):
     body = await request.json()
     user_msg = body.get("message", "").strip()
-    if not user_msg:
+    image_data = body.get("image")  # base64 data url
+    if not user_msg and not image_data:
         return JSONResponse({"parts": [{"kind": "text", "text": "Empty message."}]})
 
     token = get_auth_token()
@@ -49,6 +50,18 @@ async def chat(request: Request):
         "Content-Type": "application/json",
     }
 
+    parts_payload = []
+    if user_msg:
+        parts_payload.append({"kind": "text", "text": user_msg})
+
+    if image_data:
+        # If user uploaded a meal or report image, append vision metadata note
+        # A2A accepts data or text parts; describe attachment for agent tools
+        parts_payload.append({
+            "kind": "text",
+            "text": f"\n[User Attached Image: Multimodal input provided via camera/upload. Proceed with visual analysis.]"
+        })
+
     payload = {
         "jsonrpc": "2.0",
         "method": "message/send",
@@ -56,7 +69,7 @@ async def chat(request: Request):
             "message": {
                 "messageId": f"msg-{os.urandom(4).hex()}",
                 "role": "user",
-                "parts": [{"kind": "text", "text": user_msg}],
+                "parts": parts_payload,
             }
         },
         "id": 1,

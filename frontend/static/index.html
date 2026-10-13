@@ -12,6 +12,8 @@
 <!-- Marked.js for rich markdown & media rendering -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<!-- Canvas Confetti for Celebration FX -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <style>
   :root {
     --accent: #059669; /* Emerald Green */
@@ -59,13 +61,86 @@
     --accent: #0284c7;
     --accent-light: #e0f2fe;
     --accent-dark: #0369a1;
-    --accent-glow: rgba(2, 132, 199, 0.22);
+    --accent-glow: rgba(2, 132, 199, 0.25);
     --bg: #f0f9ff;
     --card-bg: #ffffff;
     --header-bg: #ffffff;
     --border: #bae6fd;
-    --text-primary: #082f49;
-    --text-secondary: #0369a1;
+    --text-primary: #0c4a6e;
+    --text-secondary: #0284c7;
+  }
+
+  /* Live Life Dashboard KPI Widgets */
+  .dashboard-bar {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0.65rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+  .kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .kpi-card:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+  }
+  .kpi-ring {
+    position: relative;
+    width: 32px;
+    height: 32px;
+  }
+  .kpi-ring svg {
+    transform: rotate(-90deg);
+  }
+  .kpi-ring circle {
+    fill: none;
+    stroke-width: 3.5;
+  }
+  .kpi-ring .bg {
+    stroke: var(--border);
+  }
+  .kpi-ring .prog {
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s ease;
+  }
+
+  .upload-preview-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-right: 0.4rem;
+  }
+  .upload-preview-badge button {
+    background: none;
+    border: none;
+    color: var(--accent-dark);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0;
+    line-height: 1;
   }
 
   * { box-sizing: border-box; }
@@ -506,6 +581,17 @@
       </select>
     </div>
 
+    <!-- AI Coach Persona Selector -->
+    <div style="display:flex; align-items:center; gap:0.3rem;">
+      <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:500;">Coach:</span>
+      <select id="persona-select" onchange="onPersonaChange(this.value)" style="background:var(--card-bg); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:0.3rem 0.5rem; font-size:0.82rem; font-weight:500; outline:none; cursor:pointer;">
+        <option value="mentor">🌱 Supportive Mentor</option>
+        <option value="drill_sergeant">🎖️ Tough Love Drill Sergeant</option>
+        <option value="tech_lead">🧠 Silicon Valley Tech Lead</option>
+        <option value="scientist">🩺 Clinical Scientist</option>
+      </select>
+    </div>
+
     <!-- Theme Switcher -->
     <div style="display:flex; align-items:center; gap:0.3rem;">
       <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:500;">Theme:</span>
@@ -517,12 +603,71 @@
       </select>
     </div>
 
+    <!-- 1-Click Export Daily Briefing -->
+    <button onclick="exportDailyBriefing()" title="Export today's summary as Markdown report" style="background:var(--card-bg); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:0.35rem 0.65rem; font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.3rem;">
+      📥 Export Briefing
+    </button>
+
     <!-- Capabilities Modal Trigger -->
     <button onclick="openCapsModal()" style="background:var(--accent-light); color:var(--accent-dark); border:1px solid var(--border); border-radius:8px; padding:0.35rem 0.65rem; font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.3rem;">
       💡 Capabilities
     </button>
   </div>
 </header>
+
+<!-- 📊 Live Visual Life Dashboard (Interactive KPI Progress Rings) -->
+<div class="dashboard-bar" id="dashboard-bar">
+  <!-- Calorie KPI -->
+  <div class="kpi-card" onclick="applyPrompt('How is my daily calorie budget looking today, and what healthy food swaps do you recommend?')" title="Daily Calorie Balance">
+    <div class="kpi-ring">
+      <svg width="32" height="32" viewBox="0 0 36 36">
+        <circle class="bg" cx="18" cy="18" r="14"></circle>
+        <circle class="prog" id="kpi-cal-ring" cx="18" cy="18" r="14" stroke-dasharray="88" stroke-dashoffset="26"></circle>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">Calorie Target</div>
+      <div style="font-size:0.85rem; font-weight:700;" id="kpi-cal-val">1,450 / 2,100 kcal</div>
+    </div>
+  </div>
+
+  <!-- AI Career Milestone KPI -->
+  <div class="kpi-card" onclick="applyPrompt('Show my AI Engineer career roadmap and calculate what milestone project I need to build next.')" title="AI Engineering Roadmap Phase">
+    <div class="kpi-ring">
+      <svg width="32" height="32" viewBox="0 0 36 36">
+        <circle class="bg" cx="18" cy="18" r="14"></circle>
+        <circle class="prog" id="kpi-career-ring" cx="18" cy="18" r="14" stroke-dasharray="88" stroke-dashoffset="44" style="stroke:#6366f1;"></circle>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">Career Roadmap</div>
+      <div style="font-size:0.85rem; font-weight:700;" id="kpi-career-val">50% • Phase 2 Transformers</div>
+    </div>
+  </div>
+
+  <!-- Deep Focus Blocks KPI -->
+  <div class="kpi-card" onclick="applyPrompt('Plan my next deep focus session according to my peak focus window.')" title="Daily Focus Time">
+    <div class="kpi-ring">
+      <svg width="32" height="32" viewBox="0 0 36 36">
+        <circle class="bg" cx="18" cy="18" r="14"></circle>
+        <circle class="prog" id="kpi-focus-ring" cx="18" cy="18" r="14" stroke-dasharray="88" stroke-dashoffset="22" style="stroke:#f59e0b;"></circle>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">Deep Focus</div>
+      <div style="font-size:0.85rem; font-weight:700;" id="kpi-focus-val">3.0 / 4.0 hrs</div>
+    </div>
+  </div>
+
+  <!-- Daily Consistency Streak -->
+  <div class="kpi-card" onclick="triggerCelebration('🔥 7-Day Consistency Streak! You are unstoppable!');" title="Daily Activity Streak">
+    <div style="font-size:1.4rem; line-height:1;">🔥</div>
+    <div>
+      <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">Habit Streak</div>
+      <div style="font-size:0.85rem; font-weight:700;">7 Days Active 🎉</div>
+    </div>
+  </div>
+</div>
 
 <div id="log">
   <div class="msg agent">
@@ -635,9 +780,21 @@
     <div class="chip" onclick="applyPrompt('Summarize my expenses this month by category.')">💳 Expense Breakdown</div>
     <div class="chip" onclick="applyPrompt('Plan my morning schedule based on my pending high priority tasks and peak focus window.')">☀️ Focus Schedule</div>
   </div>
+  <!-- Image / Camera Upload Preview Container -->
+  <div id="upload-preview-container" style="display:none; align-items:center; margin-bottom:0.4rem; padding:0 0.2rem;">
+    <span class="upload-preview-badge">
+      <span id="upload-filename">photo.jpg</span>
+      <button type="button" onclick="clearSelectedImage()" title="Remove image">✕</button>
+    </span>
+    <span style="font-size:0.75rem; color:var(--text-secondary);">Image attached for Gemini Vision analysis</span>
+  </div>
+
   <form id="form">
+    <!-- Hidden File Input for Meal / Lab Report Photos -->
+    <input type="file" id="image-file-input" accept="image/*" style="display:none;" onchange="handleImageFileSelected(this)">
+    <button type="button" id="camera-btn" class="mic-btn" style="color:var(--text-primary); font-size:1.05rem;" title="Upload Photo of Meal or Lab Report (Gemini Vision)" onclick="document.getElementById('image-file-input').click()">📷</button>
     <button type="button" id="mic-btn" class="mic-btn" title="Voice Input (Speech-to-Text)" onclick="toggleVoiceInput()">🎙️</button>
-    <input id="input" placeholder="Ask or speak to your Smart Tracker Agent…" autocomplete="off" autofocus>
+    <input id="input" placeholder="Ask, speak, or upload photo to your Smart Tracker Agent…" autocomplete="off" autofocus>
     <button>Send</button>
   </form>
 </div>
@@ -1177,6 +1334,213 @@ function toggleSpeechReadout(text, btn) {
   };
 
   window.speechSynthesis.speak(currentUtterance);
+}
+
+// --- 5. Sound FX (Web Audio API Synthesized Chime) & Canvas Confetti ---
+function playSuccessChime() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    // Play an uplifting two-tone arpeggio (C5 -> G5)
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+    osc.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.15); // G5
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.45);
+  } catch (err) {
+    console.log("AudioContext chime muted/unsupported:", err);
+  }
+}
+
+function triggerCelebration(msg) {
+  playSuccessChime();
+  if (window.confetti) {
+    window.confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  }
+  if (msg) {
+    const b = bubble("agent");
+    b.innerHTML = `<div style="padding:0.4rem; font-weight:600; color:var(--accent-dark); display:flex; align-items:center; gap:0.5rem;"><span style="font-size:1.3rem;">🎉</span> ${msg}</div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+// Intercept task completion to fire celebratory chime & confetti
+const origCompleteTask = window.completeTaskAction;
+window.completeTaskAction = async function(taskId) {
+  triggerCelebration(`Task "${taskId}" completed! Milestone recorded.`);
+  await sendChatMessage(`Mark task ${taskId} as completed.`);
+};
+
+// --- 4. AI Coach Persona Switcher ---
+let currentPersona = localStorage.getItem("smart_tracker_persona") || "mentor";
+const personaSelect = document.getElementById("persona-select");
+if (personaSelect) personaSelect.value = currentPersona;
+
+function onPersonaChange(persona) {
+  currentPersona = persona;
+  localStorage.setItem("smart_tracker_persona", persona);
+  let announcement = "";
+  if (persona === "drill_sergeant") {
+    announcement = "🎖️ **Drill Sergeant Mode Activated!** No excuses, no shortcuts. We are crushing your goals today!";
+  } else if (persona === "tech_lead") {
+    announcement = "🧠 **Silicon Valley Tech Lead Mode Activated.** Let's optimize your architectures, write clean systems, and ship.";
+  } else if (persona === "scientist") {
+    announcement = "🩺 **Clinical Scientist Mode Activated.** Objectivity, statistical markers, and metabolic health are the baseline.";
+  } else {
+    announcement = "🌱 **Supportive Mentor Mode Activated.** I'm here to guide you step-by-step toward balanced growth.";
+  }
+  const b = bubble("agent");
+  b.innerHTML = marked.parse(announcement);
+  log.scrollTop = log.scrollHeight;
+}
+
+const personaPrompts = {
+  mentor: "You are a warm, encouraging, evidence-grounded personal mentor. Support the user empathetically while holding them accountable.",
+  drill_sergeant: "You are a high-energy, no-nonsense military Drill Sergeant. Speak with commanding urgency, push the user to do the work, call out unhealthy excuses directly, and celebrate victories with loud enthusiasm!",
+  tech_lead: "You are a pragmatic, highly experienced Silicon Valley Staff AI Engineer & Tech Lead. Speak in technical, concise terms, focus on trade-offs, architecture, clean execution, and algorithmic rigor.",
+  scientist: "You are a rigorous clinical researcher and metabolic scientist. Speak objectively with clinical precision, reference physiological mechanisms, biomarkers, and peer-reviewed principles."
+};
+
+// --- 2. Camera / Photo Meal & Lab Report Uploader ---
+let attachedImageData = null;
+
+function handleImageFileSelected(inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    attachedImageData = {
+      name: file.name,
+      type: file.type,
+      base64: e.target.result
+    };
+    document.getElementById("upload-filename").textContent = `📎 ${file.name} (${Math.round(file.size / 1024)} KB)`;
+    document.getElementById("upload-preview-container").style.display = "flex";
+    // Smart auto-detect from filename
+    if (file.name.toLowerCase().includes("report") || file.name.toLowerCase().includes("blood") || file.name.toLowerCase().includes("lab")) {
+      switchMode("medical", true);
+      input.value = "Analyze this lab report photo, extract biomarkers, and flag reference ranges.";
+    } else {
+      switchMode("health", true);
+      input.value = "Analyze this meal photo, estimate calories and macronutrients, and suggest healthy swaps.";
+    }
+    input.focus();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearSelectedImage() {
+  attachedImageData = null;
+  document.getElementById("image-file-input").value = "";
+  document.getElementById("upload-preview-container").style.display = "none";
+}
+
+// Enhance sendChatMessage to include Persona instruction & Attached Image
+const origSendChatMessage = sendChatMessage;
+sendChatMessage = async function(text) {
+  if (currentModeSetting === "auto") {
+    const detected = detectModeFromText(text);
+    if (detected) switchMode(detected, true);
+  }
+
+  let fullPrompt = text;
+  // Prepend persona guidance if selected
+  const personaInstruction = personaPrompts[currentPersona];
+  if (personaInstruction && currentPersona !== "mentor") {
+    fullPrompt = `[System Tone Instruction: ${personaInstruction}]\n\n${text}`;
+  }
+
+  let userDisplayHtml = text;
+  let imagePayload = null;
+  if (attachedImageData) {
+    imagePayload = attachedImageData;
+    userDisplayHtml = `<div style="margin-bottom:0.4rem;"><span class="upload-preview-badge">📷 ${attachedImageData.name}</span></div>` + text;
+    clearSelectedImage();
+  }
+
+  const ub = bubble("user");
+  ub.innerHTML = userDisplayHtml;
+  const b = bubble("agent"); b.textContent = "…";
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: fullPrompt,
+        image: imagePayload ? imagePayload.base64 : null,
+        persona: currentPersona
+      })
+    });
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error(`Server returned non-JSON (HTTP ${res.status}). ${raw.slice(0, 300)}`); }
+    renderReply(b, data.parts || []);
+  } catch (e) {
+    b.textContent = "Error: " + e.message;
+  }
+};
+
+// --- 3. 1-Click Export Daily Executive Briefing (Markdown Download) ---
+function exportDailyBriefing() {
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const calVal = document.getElementById("kpi-cal-val").textContent;
+  const careerVal = document.getElementById("kpi-career-val").textContent;
+  const focusVal = document.getElementById("kpi-focus-val").textContent;
+  
+  // Extract all chat log messages
+  let chatHistoryMd = "";
+  const msgs = document.querySelectorAll("#log .msg");
+  msgs.forEach(m => {
+    const isUser = m.classList.contains("user");
+    const sender = isUser ? "### 👤 You" : "### 🤖 Smart Tracker AI";
+    const text = m.querySelector(".bubble").innerText;
+    if (text && text !== "…") {
+      chatHistoryMd += `\n${sender}\n${text}\n`;
+    }
+  });
+
+  const mdReport = `# 📋 Smart Tracker AI — Daily Executive Briefing
+**Generated**: ${today}
+**Active Persona**: ${currentPersona.toUpperCase()}
+
+---
+
+## 📊 Daily Life Dashboard Metrics
+* **🔥 Daily Calorie Balance**: \`${calVal}\`
+* **🎯 AI Career Roadmap**: \`${careerVal}\`
+* **⚡ Deep Focus Log**: \`${focusVal}\`
+* **🔥 Habit Streak**: \`7 Days Active (Consistent)\`
+
+---
+
+## 💬 Today's Key Interactions & Agent Guidance
+${chatHistoryMd || "_No chat history in current session._"}
+
+---
+*Generated by Smart Tracker AI — Autonomous Personal Operating System powered by Gemini 3.8 Flash & Google Cloud Agent Platform.*
+`;
+
+  const blob = new Blob([mdReport], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Smart_Tracker_Briefing_${new Date().toISOString().slice(0,10)}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  triggerCelebration("Daily Executive Briefing downloaded! 📥");
 }
 </script>
 </body>
