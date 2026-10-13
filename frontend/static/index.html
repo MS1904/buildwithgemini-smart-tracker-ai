@@ -17,13 +17,57 @@
     --accent: #059669; /* Emerald Green */
     --accent-light: #ecfdf5;
     --accent-dark: #047857;
-    --accent-glow: rgba(5, 150, 105, 0.15);
+    --accent-glow: rgba(5, 150, 105, 0.18);
     --bg: #f8fafc;
     --card-bg: #ffffff;
+    --header-bg: #ffffff;
     --border: #e2e8f0;
     --text-primary: #0f172a;
     --text-secondary: #64748b;
   }
+
+  /* Midnight Dark Theme */
+  [data-theme="dark"] {
+    --accent: #10b981;
+    --accent-light: rgba(16, 185, 129, 0.15);
+    --accent-dark: #059669;
+    --accent-glow: rgba(16, 185, 129, 0.25);
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --header-bg: #1e293b;
+    --border: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+  }
+
+  /* Cyberpunk Neon Theme */
+  [data-theme="cyberpunk"] {
+    --accent: #ec4899;
+    --accent-light: rgba(236, 72, 153, 0.15);
+    --accent-dark: #db2777;
+    --accent-glow: rgba(236, 72, 153, 0.35);
+    --bg: #180d2b;
+    --card-bg: #241442;
+    --header-bg: #241442;
+    --border: #4a2574;
+    --text-primary: #fdf2f8;
+    --text-secondary: #c084fc;
+  }
+
+  /* Oceanic Blue Theme */
+  [data-theme="oceanic"] {
+    --accent: #0284c7;
+    --accent-light: #e0f2fe;
+    --accent-dark: #0369a1;
+    --accent-glow: rgba(2, 132, 199, 0.22);
+    --bg: #f0f9ff;
+    --card-bg: #ffffff;
+    --header-bg: #ffffff;
+    --border: #bae6fd;
+    --text-primary: #082f49;
+    --text-secondary: #0369a1;
+  }
+
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -33,15 +77,17 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+    transition: background 0.2s, color 0.2s;
   }
   header {
-    background: #ffffff;
+    background: var(--header-bg);
     border-bottom: 1px solid var(--border);
-    padding: 0.85rem 1.5rem;
+    padding: 0.75rem 1.25rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    gap: 0.5rem;
   }
   .brand {
     display: flex;
@@ -164,7 +210,7 @@
     border-collapse: collapse;
     margin: 0.8rem 0;
     font-size: 0.9rem;
-    background: #ffffff;
+    background: var(--card-bg);
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border);
@@ -197,7 +243,7 @@
   
   /* Footer & Input Controls */
   .footer-container {
-    background: #ffffff;
+    background: var(--header-bg);
     border-top: 1px solid var(--border);
     padding: 0.85rem 1.5rem 1.1rem;
     max-width: 860px;
@@ -240,6 +286,8 @@
   input {
     flex: 1;
     padding: 0.8rem 1rem;
+    background: var(--card-bg);
+    color: var(--text-primary);
     border: 1px solid var(--border);
     border-radius: 10px;
     font-size: 1rem; /* 16px prevents iOS Safari from automatically zooming in */
@@ -351,37 +399,147 @@
 <header>
   <div class="brand">
     <div class="brand-icon">🌱</div>
-    <span>Smart Tracker AI</span>
+    <div>
+      <span>Smart Tracker AI</span>
+      <div id="mode-badge" style="font-size:0.75rem; color:var(--text-secondary); font-weight:normal; margin-top:2px;">Mode: <strong>All-in-One Life Agent</strong></div>
+    </div>
   </div>
-  <div class="tagline">Personal Life Agent</div>
+  
+  <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+    <!-- Mode Switcher -->
+    <div style="display:flex; align-items:center; gap:0.3rem;">
+      <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:500;">Mode:</span>
+      <select id="mode-select" onchange="switchMode(this.value)" style="background:var(--card-bg); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:0.3rem 0.5rem; font-size:0.82rem; font-weight:500; outline:none; cursor:pointer;">
+        <option value="all">🌟 All Capabilities</option>
+        <option value="career">🤖 AI Career Roadmap</option>
+        <option value="health">🥗 Health & Calorie Coach</option>
+        <option value="medical">📄 Medical Report Lab</option>
+        <option value="tasks">📋 Task & Focus Engine</option>
+        <option value="finance">💳 Finance & Budgeting</option>
+      </select>
+    </div>
+
+    <!-- Theme Switcher -->
+    <div style="display:flex; align-items:center; gap:0.3rem;">
+      <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:500;">Theme:</span>
+      <select id="theme-select" onchange="switchTheme(this.value)" style="background:var(--card-bg); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:0.3rem 0.5rem; font-size:0.82rem; font-weight:500; outline:none; cursor:pointer;">
+        <option value="emerald">🌿 Emerald</option>
+        <option value="dark">🌙 Midnight Dark</option>
+        <option value="cyberpunk">⚡ Cyberpunk Neon</option>
+        <option value="oceanic">🌊 Oceanic Blue</option>
+      </select>
+    </div>
+
+    <!-- Capabilities Modal Trigger -->
+    <button onclick="openCapsModal()" style="background:var(--accent-light); color:var(--accent-dark); border:1px solid var(--border); border-radius:8px; padding:0.35rem 0.65rem; font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.3rem;">
+      💡 Capabilities
+    </button>
+  </div>
 </header>
 
 <div id="log">
   <div class="msg agent">
     <div class="avatar">AI</div>
     <div class="bubble-container">
-      <div class="bubble">Hello! I am your <strong>Smart Tracker AI</strong> agent. I can access your persistent Firestore memories, inspect your focus routines, and help plan your day with verified evidence.</div>
+      <div class="bubble">
+        <h2 style="margin:0 0 0.5rem; color:var(--accent-dark); font-size:1.2rem;">✨ Welcome to Smart Tracker AI</h2>
+        <p style="margin:0 0 0.8rem; color:var(--text-secondary); font-size:0.92rem;">Your autonomous personal operating system powered by Gemini & Vertex AI. Here is everything I can do for you:</p>
+        
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:0.6rem; margin:0.8rem 0;">
+          <div onclick="applyPrompt('Show my AI Engineer career roadmap, milestones, and what projects I should tackle next.')" style="background:var(--accent-light); border:1px solid var(--border); border-radius:10px; padding:0.75rem; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-weight:700; color:var(--accent-dark); font-size:0.9rem;">🤖 AI Career Roadmap</div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">4-phase curriculum, milestone badges, & portfolio sprints.</div>
+          </div>
+          
+          <div onclick="applyPrompt('Analyze my daily caloric balance and weight loss progress. Give alternatives if I exceeded intake.')" style="background:var(--accent-light); border:1px solid var(--border); border-radius:10px; padding:0.75rem; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-weight:700; color:var(--accent-dark); font-size:0.9rem;">🥗 Health & Calorie Coach</div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">Meal logging, surplus guidance & calorie-saving swaps.</div>
+          </div>
+
+          <div onclick="openReportModal()" style="background:var(--accent-light); border:1px solid var(--border); border-radius:10px; padding:0.75rem; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-weight:700; color:var(--accent-dark); font-size:0.9rem;">📄 Medical Report Analyzer</div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">Paste lab panels or blood tests to extract biomarkers & reference flags.</div>
+          </div>
+
+          <div onclick="applyPrompt('What pending tasks do I have scheduled for today?')" style="background:var(--accent-light); border:1px solid var(--border); border-radius:10px; padding:0.75rem; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-weight:700; color:var(--accent-dark); font-size:0.9rem;">📋 Tasks & Focus Routines</div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">Firestore task tracking, priority badges, & mark complete.</div>
+          </div>
+
+          <div onclick="applyPrompt('Summarize my expenses this month by category.')" style="background:var(--accent-light); border:1px solid var(--border); border-radius:10px; padding:0.75rem; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-weight:700; color:var(--accent-dark); font-size:0.9rem;">💳 Personal Finance</div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">Expense logging, category breakdowns, & burn-rate charts.</div>
+          </div>
+
+          <div onclick="applyPrompt('What are my stored preferences and routines in Firestore memory?')" style="background:var(--accent-light); border:1px solid var(--border); border-radius:10px; padding:0.75rem; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-weight:700; color:var(--accent-dark); font-size:0.9rem;">🧠 Long-Term Memory</div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">Stores personal routines, sleep windows, & work habits.</div>
+          </div>
+        </div>
+        <p style="margin:0.5rem 0 0; font-size:0.85rem; color:var(--text-secondary);">💡 Click any card above or type below to get started. Use the <strong>Theme</strong> and <strong>Mode</strong> dropdowns at the top right to customize your view.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Capabilities Details Modal -->
+<div id="caps-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:110; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:var(--card-bg); max-width:620px; width:100%; max-height:85vh; overflow-y:auto; border-radius:16px; padding:1.5rem; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid var(--border); color:var(--text-primary);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">
+      <h3 style="margin:0; font-size:1.2rem; color:var(--accent-dark); display:flex; align-items:center; gap:0.4rem;">💡 Complete Agent Capabilities</h3>
+      <button onclick="closeCapsModal()" style="background:none; border:none; color:var(--text-secondary); font-size:1.2rem; cursor:pointer; padding:0.2rem 0.5rem;">✕</button>
+    </div>
+    
+    <div style="display:flex; flex-direction:column; gap:1rem; font-size:0.88rem; line-height:1.5;">
+      <div>
+        <strong style="color:var(--accent);">🤖 1. AI Engineer Career Tracker</strong>
+        <p style="margin:0.25rem 0 0; color:var(--text-secondary);">Maintains a live 4-phase technical roadmap towards Senior AI Engineering. Tracks math foundations, transformer architectures, agent frameworks (Google ADK/A2A), and production deployment with milestone badges.</p>
+      </div>
+      <div>
+        <strong style="color:var(--accent);">🥗 2. Health & Calorie Coach with Swaps</strong>
+        <p style="margin:0.25rem 0 0; color:var(--text-secondary);">Logs meals, tracks daily calorie ceilings vs weight loss goals, and automatically suggests recovery steps & healthy food swaps (e.g. swapping soda or deep-dish pizza) when a surplus occurs.</p>
+      </div>
+      <div>
+        <strong style="color:var(--accent);">📄 3. Medical Report / Lab Biomarker Analyzer</strong>
+        <p style="margin:0.25rem 0 0; color:var(--text-secondary);">Allows you to upload or paste lab results (e.g. blood panels, HbA1c, lipids, vitamins). Formats data into clear tables, highlights out-of-range biomarkers, and offers lifestyle recommendations.</p>
+      </div>
+      <div>
+        <strong style="color:var(--accent);">📋 4. Task & Routine Productivity Engine</strong>
+        <p style="margin:0.25rem 0 0; color:var(--text-secondary);">Real-time bidirectional synchronization with Cloud Firestore. Add tasks, mark tasks complete with celebration feedback, query pending items, and schedule focus sessions based on energy peaks.</p>
+      </div>
+      <div>
+        <strong style="color:var(--accent);">💳 5. Personal Finance & Expense Tracker</strong>
+        <p style="margin:0.25rem 0 0; color:var(--text-secondary);">Log expenses with categories in natural language. Summarizes monthly spend, calculates burn rates, and generates category breakdowns.</p>
+      </div>
+      <div>
+        <strong style="color:var(--accent);">🎨 6. Multi-Theme & Focused Mode UI</strong>
+        <p style="margin:0.25rem 0 0; color:var(--text-secondary);">Switch between 4 themes (Emerald, Midnight Dark, Cyberpunk Neon, Oceanic Blue) and tailor the prompt bar to specific work modes (Career, Health, Tasks, Finance).</p>
+      </div>
+    </div>
+    
+    <div style="margin-top:1.2rem; text-align:right;">
+      <button onclick="closeCapsModal()" style="background:var(--accent); color:#ffffff; border:none; border-radius:8px; padding:0.55rem 1.2rem; font-weight:600; cursor:pointer;">Got it!</button>
     </div>
   </div>
 </div>
 
 <div id="report-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; padding:1rem;">
-  <div style="background:#ffffff; max-width:540px; width:100%; border-radius:16px; padding:1.4rem; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border:1px solid var(--border);">
+  <div style="background:var(--card-bg); color:var(--text-primary); max-width:540px; width:100%; border-radius:16px; padding:1.4rem; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border:1px solid var(--border);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
       <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">📄 Health / Medical Report Analyzer</h3>
       <button onclick="closeReportModal()" style="background:none; border:none; color:var(--text-secondary); font-size:1.2rem; cursor:pointer; padding:0.2rem 0.5rem;">✕</button>
     </div>
     <p style="margin:0 0 0.8rem; font-size:0.88rem; color:var(--text-secondary); line-height:1.4;">Paste your lab results, blood work numbers, or medical summary below. The agent will extract key biomarkers, flag reference ranges, and advise lifestyle adjustments:</p>
-    <textarea id="report-text-input" rows="6" style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:0.9rem; resize:vertical; outline:none; box-sizing:border-box;" placeholder="e.g. Fasting Blood Glucose: 108 mg/dL (Normal: 70-99)&#10;HbA1c: 5.8% (Prediabetes: 5.7-6.4%)&#10;Total Cholesterol: 215 mg/dL&#10;Vitamin D (25-OH): 22 ng/mL (Normal: 30-100)"></textarea>
+    <textarea id="report-text-input" rows="6" style="width:100%; padding:0.75rem; background:var(--bg); color:var(--text-primary); border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:0.9rem; resize:vertical; outline:none; box-sizing:border-box;" placeholder="e.g. Fasting Blood Glucose: 108 mg/dL (Normal: 70-99)&#10;HbA1c: 5.8% (Prediabetes: 5.7-6.4%)&#10;Total Cholesterol: 215 mg/dL&#10;Vitamin D (25-OH): 22 ng/mL (Normal: 30-100)"></textarea>
     <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-top:1rem;">
-      <button onclick="closeReportModal()" style="background:#f1f5f9; color:var(--text-secondary); padding:0.6rem 1rem;">Cancel</button>
-      <button onclick="submitReportAnalysis()" style="background:var(--accent); color:#fff; padding:0.6rem 1.2rem;">Analyze Report</button>
+      <button onclick="closeReportModal()" style="background:var(--bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:8px; padding:0.6rem 1rem; cursor:pointer;">Cancel</button>
+      <button onclick="submitReportAnalysis()" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:0.6rem 1.2rem; cursor:pointer;">Analyze Report</button>
     </div>
   </div>
 </div>
 
 <div class="footer-container">
-  <div class="prompt-chips">
+  <div class="prompt-chips" id="prompt-chips-container">
     <div class="chip" onclick="applyPrompt('What pending tasks do I have scheduled for today?')">📋 Pending Tasks</div>
     <div class="chip" onclick="applyPrompt('Show my AI Engineer career roadmap, milestones, and what projects I should tackle next.')">🤖 AI Engineer Roadmap</div>
     <div class="chip" onclick="applyPrompt('Analyze my daily caloric balance and weight loss progress. Give alternatives if I exceeded intake.')">🥗 Calorie & Health Coach</div>
@@ -544,6 +702,100 @@ function renderReply(b, parts) {
   }
   if (!b.childNodes.length) b.textContent = "(no response)";
   log.scrollTop = log.scrollHeight;
+}
+
+function switchTheme(theme) {
+  if (theme === "emerald") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+  localStorage.setItem("smart_tracker_theme", theme);
+}
+
+const modeChips = {
+  all: [
+    { label: "📋 Pending Tasks", prompt: "What pending tasks do I have scheduled for today?" },
+    { label: "🤖 AI Engineer Roadmap", prompt: "Show my AI Engineer career roadmap, milestones, and what projects I should tackle next." },
+    { label: "🥗 Calorie & Health Coach", prompt: "Analyze my daily caloric balance and weight loss progress. Give alternatives if I exceeded intake." },
+    { label: "📎 Analyze Medical Report", action: "openReportModal()" },
+    { label: "🍕 Log Meal Intake", prompt: "Log meal intake: 2 slices pizza and soda, 850 kcal, 22g protein for lunch." },
+    { label: "💳 Expense Breakdown", prompt: "Summarize my expenses this month by category." },
+    { label: "☀️ Focus Schedule", prompt: "Plan my morning schedule based on my pending high priority tasks and peak focus window." }
+  ],
+  career: [
+    { label: "🗺️ Full Career Roadmap", prompt: "Show my AI Engineer career roadmap, milestones, and what projects I should tackle next." },
+    { label: "🚀 Next Project Sprint", prompt: "What portfolio project should I build right now for Phase 2 transformers/attention?" },
+    { label: "🛠️ Add Transformer Task", prompt: "Add a learning task: Implement multi-head attention block from scratch in PyTorch with 90 min estimate." },
+    { label: "📈 Phase Progress", prompt: "What is my current career milestone percentage and what is required to reach 50%?" }
+  ],
+  health: [
+    { label: "🥗 Analyze Calorie Balance", prompt: "Analyze my daily caloric balance and weight loss progress. Give alternatives if I exceeded intake." },
+    { label: "🍕 Log Pizza Dinner", prompt: "I ate 3 slices of pepperoni pizza and a large soda for dinner (1100 kcal). What should I do?" },
+    { label: "🥑 Healthy Swaps", prompt: "What are healthy substitutes for fast food pizza and soda during weight loss?" },
+    { label: "🚶 Post-Meal Walk", prompt: "Add a quick 20-min post-dinner brisk walk to my tasks for tonight." }
+  ],
+  medical: [
+    { label: "📎 Paste Lab Panel", action: "openReportModal()" },
+    { label: "🩸 Sample Blood Test", prompt: "Analyze this medical report: Fasting Blood Glucose: 112 mg/dL (70-99), HbA1c: 5.9% (Normal <5.7%), Total Cholesterol: 228 mg/dL, Vitamin D: 21 ng/mL." },
+    { label: "📊 Biomarker Guidelines", prompt: "Explain optimal reference ranges for fasting glucose, HbA1c, and Vitamin D3." }
+  ],
+  tasks: [
+    { label: "📋 Today's Pending Tasks", prompt: "What pending tasks do I have scheduled for today?" },
+    { label: "➕ Add Deep Work Task", prompt: "Add a task: Finish Vertex AI Agent Engine deployment, priority high, estimated 60 minutes." },
+    { label: "✅ Mark Task Done", prompt: "Mark task_1 as completed." },
+    { label: "☀️ Plan Peak Focus Session", prompt: "Plan my morning schedule based on my pending high priority tasks and peak focus window." }
+  ],
+  finance: [
+    { label: "💳 Monthly Category Summary", prompt: "Summarize my expenses this month by category." },
+    { label: "💸 Log $18.50 Lunch", prompt: "Log an expense: $18.50 for lunch under food." },
+    { label: "📉 Monthly Burn Rate", prompt: "Calculate my total spending and projected burn rate for this month." }
+  ]
+};
+
+const modeBadges = {
+  all: "Mode: <strong>All-in-One Life Agent</strong>",
+  career: "Mode: <strong>🤖 AI Career Roadmap</strong>",
+  health: "Mode: <strong>🥗 Health & Calorie Coach</strong>",
+  medical: "Mode: <strong>📄 Medical Report Lab</strong>",
+  tasks: "Mode: <strong>📋 Task & Focus Engine</strong>",
+  finance: "Mode: <strong>💳 Finance & Budgeting</strong>"
+};
+
+function switchMode(mode) {
+  const container = document.getElementById("prompt-chips-container");
+  const badge = document.getElementById("mode-badge");
+  if (badge && modeBadges[mode]) badge.innerHTML = modeBadges[mode];
+  
+  if (!container || !modeChips[mode]) return;
+  container.innerHTML = "";
+  for (const item of modeChips[mode]) {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.textContent = item.label;
+    if (item.action) {
+      chip.setAttribute("onclick", item.action);
+    } else {
+      chip.onclick = () => applyPrompt(item.prompt);
+    }
+    container.appendChild(chip);
+  }
+}
+
+function openCapsModal() {
+  document.getElementById("caps-modal").style.display = "flex";
+}
+
+function closeCapsModal() {
+  document.getElementById("caps-modal").style.display = "none";
+}
+
+// Restore saved theme on load
+const savedTheme = localStorage.getItem("smart_tracker_theme") || "emerald";
+if (savedTheme !== "emerald") {
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  const ts = document.getElementById("theme-select");
+  if (ts) ts.value = savedTheme;
 }
 
 function openReportModal() {
