@@ -1,11 +1,11 @@
-# Smart Tracker AI — Personal Life Agent
+# Smart Tracker AI — Autonomous Personal Operating System & Life Agent
 
-> A privacy-conscious, evidence-grounded personal productivity agent powered by **Gemini 3.8 Flash** on Google Cloud Agent Platform.
+> An omni-device, privacy-conscious personal operating system powered by **Gemini 3.8 Flash** on Google Cloud Agent Platform. Built with voice speech-to-text input, talk-back sound readout, intelligent intent auto-detection, AI career tracking, health & calorie coaching, and medical lab report biomarker analysis.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-059669?style=for-the-badge&logo=googlecloud)](https://smart-tracker-ai-frontend-88951093419.us-central1.run.app)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/MS1904/buildwithgemini-smart-tracker-ai)
 
-🔗 **Live Public Web App**: [https://smart-tracker-ai-frontend-88951093419.us-central1.run.app](https://smart-tracker-ai-frontend-88951093419.us-central1.run.app)
+🔗 **Live Public Web Application**: [https://smart-tracker-ai-frontend-88951093419.us-central1.run.app](https://smart-tracker-ai-frontend-88951093419.us-central1.run.app)
 
 ![Smart Tracker AI Live Demo](./demo.gif)
 
@@ -13,69 +13,103 @@
 
 ## 🌟 What the Agent Does
 
-Smart Tracker AI acts as a personal life and productivity assistant that helps users manage their focus habits, routines, and daily schedules using **real, verified data**. Rather than acting as a generic conversational bot, it queries persistent preferences and routines stored in Google Cloud to generate realistic, evidence-based recommendations.
+Smart Tracker AI acts as a personal life and productivity assistant that helps users manage their focus habits, career goals, nutrition balance, and health diagnostics using **real, verified data**. Rather than acting as a generic conversational bot, it queries persistent preferences and routines stored in Google Cloud Firestore and deploys specialized function tools to generate realistic, evidence-based recommendations.
 
-### Implemented Capabilities & Tools
+### 🚀 Key Features & Capabilities
 
-The agent code in [`app/agent.py`](app/agent.py) implements and registers the following function tools:
+1. **🎙️ Voice Speech-to-Text (STT) Input**:
+   - Hands-free microphone button (`🎙️`) powered by the Web Speech API.
+   - Speak commands or meal descriptions naturally on mobile or desktop; inputs are transcribed in real-time with continuous intent detection.
 
-1. **`list_memories(category)`**:
-   - Queries Google Cloud **Firestore** for user-approved long-term memories (`preference`, `routine`, `goal_context`, `working_context`).
-   - Filters only enabled, user-curated records.
-2. **`get_memory(key)`**:
-   - Retrieves a specific memory record by key (e.g. `peak_focus_window`).
-3. **`save_memory(key, category, content, tags, confidence)`**:
-   - Creates or updates a persistent memory record in Firestore with explicit user confidence and timestamps.
-4. **`get_weather(query)`**:
-   - Contextual weather tool used to adapt exercise routines and outdoor plans.
-5. **`get_current_time(query)`**:
-   - Timezone-aware clock utility for scheduling daily focus blocks.
-6. **A2UI Response Transformation (`a2ui_callback`)**:
-   - Built-in callback in [`app/a2ui_utils.py`](app/a2ui_utils.py) that inspects agent turns and packages structured UI components (cards, columns, rows) for rich frontend rendering over the A2A protocol.
+2. **🔊 Talk-Back Sound Read-Out (TTS)**:
+   - Dedicated "🔊 Read Out" sound button attached to every agent response.
+   - Automatically sanitizes markdown syntax to synthesize pleasant, crystal-clear speech readout on demand.
+
+3. **✨ Smart Intent Auto-Detection + Manual Mode Switcher**:
+   - **Auto Mode (Default)**: Dynamically analyzes user prompts in real-time as you type or submit. Instantly adapts prompt chips and header mode badges to match user context:
+     - *AI Engineering / Transformers / Pytorch* $\rightarrow$ **🤖 AI Career Roadmap**
+     - *Calories / Meals / Weight Loss / Swaps* $\rightarrow$ **🥗 Health & Calorie Coach**
+     - *Blood tests / Glucose / HbA1c / Biomarkers* $\rightarrow$ **📄 Medical Report Lab**
+     - *Tasks / Focus / Schedule / Routines* $\rightarrow$ **📋 Task & Focus Engine**
+     - *Expenses / Budget / Burn rate* $\rightarrow$ **💳 Finance & Budgeting**
+   - **Manual Override**: Allows the user to select and lock into any mode via the header dropdown.
+
+4. **🤖 AI Engineer Career Roadmap & Milestone Tracker**:
+   - 4-phase structured curriculum: Phase 1 Foundations $\rightarrow$ Phase 2 Attention & Transformer Architectures $\rightarrow$ Phase 3 Fine-Tuning (PEFT/LoRA) $\rightarrow$ Phase 4 Autonomous Multi-Agent Systems.
+   - Calculates progress percentage, awards milestone achievements, and generates portfolio project sprints.
+
+5. **🥗 Health & Calorie Coach with Smart Food Swaps**:
+   - Logs meals, calculates calories and macronutrients against daily targets.
+   - Automatically detects caloric surplus (e.g. fast food, pizza, soda) and suggests mitigation steps (post-meal walks, calorie-saving healthy food swaps).
+
+6. **📄 Medical Report & Biomarker Analyzer**:
+   - Interactive modal to paste raw lab panels or blood work (Fasting Glucose, HbA1c, Lipids, Vitamin D).
+   - Formats results into structured comparative tables, flags abnormal levels against clinical reference intervals, and recommends lifestyle adjustments.
+
+7. **📱 Omni-Device Responsive Design**:
+   - Flawless user experience on smartphones (iOS safe areas, `100dvh` address bar handling), tablets, and ultrawide desktop monitors.
+   - 4 selectable themes: **🌿 Emerald** (Default), **🌙 Midnight Dark**, **⚡ Cyberpunk Neon**, and **🌊 Oceanic Blue**.
 
 ---
 
-## ☁️ Google Cloud Services Wired Up
+## 🛠️ Implemented Function Tools
 
-| Service | Component & Role | Status in Code |
+The backend agent code in [`app/agent.py`](app/agent.py) registers the following tools on Vertex AI Reasoning Engine:
+
+| Tool | Description |
+| :--- | :--- |
+| **`track_career_goal`** | Updates career milestone tasks, tracks learning objectives (e.g. Transformers, PyTorch, LoRA), and calculates roadmap progress %. |
+| **`get_career_progress`** | Returns active career stage, completed milestones, current phase, and next recommended project sprint. |
+| **`log_meal_intake`** | Records meals, calories, and macronutrients (protein, carbs, fats) for daily intake tracking. |
+| **`analyze_health_and_nutrition`** | Evaluates daily caloric balance against weight loss goals and generates alternative foods/steps when surplus is detected. |
+| **`analyze_health_report`** | Analyzes clinical lab reports, extracts biomarker values (HbA1c, glucose, cholesterol, vitamins), and highlights out-of-range indicators. |
+| **`list_memories`** / **`get_memory`** / **`save_memory`** | Reads and writes user preferences, routines, and peak focus windows to Google Cloud Firestore. |
+| **`get_weather`** / **`get_current_time`** | Provides real-time weather and timezone data for contextual routine scheduling. |
+| **`a2ui_callback`** | Transforms turns into rich A2UI cards, columns, and rows over the A2A protocol. |
+
+---
+
+## ☁️ Google Cloud Infrastructure
+
+| Service | Component & Role | Status |
 | :--- | :--- | :--- |
-| **Vertex AI Agent Runtime (Agent Engine)** | Deploys the ADK agent container serving the **A2A (Agent-to-Agent)** JSON-RPC protocol (`agents-cli-manifest.yaml`). | **Implemented & Live** |
-| **Gemini 3.8 Flash (`gemini-3.8-flash`)** | Core LLM reasoning engine via Google GenAI on Vertex AI. | **Implemented & Live** |
-| **Cloud Firestore (Native Mode)** | Persistent database storing user-approved AI memory documents (`memories` collection). | **Implemented & Live** |
-| **Cloud Storage** | Public storage bucket (`gs://smart-tracker-ai-assets-f4cdb9`) configured with `objectViewer` access for public web assets. | **Implemented & Wired** |
-| **A2UI v0.8 Specification** | Structured UI callback generating card surfaces over A2A data parts. | **Implemented & Wired** |
-
-> **Planned, Not Yet Implemented in Agent**:
-> - *Vertex AI Memory Bank (Agent Platform long-term memory engine)*: Planned as an optional alternative backend to the active Firestore implementation.
-> - *Direct on-the-fly Image Generation (Imagen)*: Planned for generating custom badge graphics directly in chat turns.
+| **Vertex AI Agent Engine (Reasoning Engine)** | Deploys containerized ADK agent serving the **A2A (Agent-to-Agent)** protocol (`agents-cli-manifest.yaml`). | **Live** |
+| **Gemini 3.8 Flash (`gemini-3.8-flash`)** | High-speed multimodal LLM reasoning engine via Google GenAI SDK. | **Live** |
+| **Cloud Run** | Scalable, serverless hosting for the FastAPI proxy and mobile-responsive frontend. | **Live** |
+| **Cloud Firestore (Native Mode)** | Persistent database storing user memories and routines in the `memories` collection. | **Live** |
+| **Cloud Storage** | Public storage bucket (`gs://smart-tracker-ai-assets-f4cdb9`) configured for asset delivery. | **Live** |
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌────────────────────────────────────────┐
-│  Smart Tracker Web Frontend            │
-│  (Tailored Chat UI + Prompt Chips)     │
-└──────────────────┬─────────────────────┘
-                   │ HTTP POST (/chat)
-┌──────────────────▼─────────────────────┐
-│  FastAPI A2A Proxy (frontend/main.py)  │
-│  Authenticates with Google ADC         │
-└──────────────────┬─────────────────────┘
-                   │ A2A Protocol (JSON-RPC 2.0)
-┌──────────────────▼─────────────────────┐
-│  Agent Runtime (Vertex AI Reasoning)   │
-│  - Gemini 3.8 Flash                    │
-│  - app/agent.py (Root Agent)           │
-└──────────┬──────────────────┬──────────┘
-           │                  │
-    list/get/save             │
-           ▼                  ▼
-┌──────────────────┐   ┌──────────────────────────┐
-│ Google Cloud     │   │ Google Cloud             │
-│ Firestore        │   │ Storage (Assets Bucket)  │
-└──────────────────┘   └──────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│  Smart Tracker Web Frontend                            │
+│  - Web Speech STT (Mic) & TTS (Sound Readout)          │
+│  - Auto-Intent Detector & Manual Mode Selector         │
+│  - 4 Themes (Emerald, Dark, Cyberpunk, Oceanic)        │
+│  - Interactive Medical Report & Capabilities Modals    │
+└──────────────────────────┬─────────────────────────────┘
+                           │ HTTP POST (/chat)
+┌──────────────────────────▼─────────────────────────────┐
+│  FastAPI A2A Proxy (frontend/main.py on Cloud Run)     │
+│  Authenticates with Google Application Default Creds   │
+└──────────────────────────┬─────────────────────────────┘
+                           │ A2A Protocol (JSON-RPC 2.0)
+┌──────────────────────────▼─────────────────────────────┐
+│  Vertex AI Reasoning Engine                            │
+│  - Model: Gemini 3.8 Flash                             │
+│  - Agent: app/agent.py (ADK Root Agent)                │
+│  - Tools: Career, Nutrition, Medical, Firestore        │
+└──────────┬───────────────────────────────┬─────────────┘
+           │                               │
+    list/get/save                          │
+           ▼                               ▼
+┌──────────────────────┐        ┌────────────────────────┐
+│ Google Cloud         │        │ Google Cloud           │
+│ Firestore            │        │ Storage (Assets Bucket)│
+└──────────────────────┘        └────────────────────────┘
 ```
 
 ---
@@ -101,15 +135,12 @@ pip install -r frontend/requirements.txt
 python seed_firestore.py
 ```
 
-### 3. Run the Agent Locally with ADK Web
+### 3. Run Locally with ADK Web
 ```bash
 adk web --port 8080 --allow_origins "*" --reload_agents
 ```
-*(Open the dev UI, disable Token Streaming in settings, and start a conversation).*
 
-### 4. Run the Custom Branded Frontend Proxy
-To run the branded Smart Tracker AI chat interface talking to your deployed Agent Runtime:
-
+### 4. Run the Full Frontend Proxy
 ```bash
 export AGENT_ENGINE_RESOURCE_NAME="projects/<PROJECT_NUMBER>/locations/us-central1/reasoningEngines/<REASONING_ENGINE_ID>"
 export AGENT_DIRECTORY="app"
@@ -117,7 +148,7 @@ export AGENT_DIRECTORY="app"
 cd frontend
 python main.py
 ```
-Then navigate to the proxy address in your browser to interact with the agent.
+Open `http://localhost:8080/` in your browser.
 
 ---
 

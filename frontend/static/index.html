@@ -316,6 +316,57 @@
   button:hover {
     background: var(--accent-dark);
   }
+  .mic-btn {
+    padding: 0.8rem 1rem;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    transition: all 0.2s;
+  }
+  .mic-btn:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .mic-btn.listening {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #dc2626;
+    animation: micPulse 1.2s infinite;
+  }
+  @keyframes micPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+  .tts-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.4rem;
+    transition: all 0.15s;
+  }
+  .tts-btn:hover {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+  }
+  .tts-btn.speaking {
+    color: #ef4444;
+    font-weight: 600;
+  }
 
   /* --- Comprehensive Responsive & Device-Comfort Optimizations --- */
   @media (max-width: 640px) {
@@ -585,7 +636,8 @@
     <div class="chip" onclick="applyPrompt('Plan my morning schedule based on my pending high priority tasks and peak focus window.')">☀️ Focus Schedule</div>
   </div>
   <form id="form">
-    <input id="input" placeholder="Ask your Smart Tracker Agent…" autocomplete="off" autofocus>
+    <button type="button" id="mic-btn" class="mic-btn" title="Voice Input (Speech-to-Text)" onclick="toggleVoiceInput()">🎙️</button>
+    <input id="input" placeholder="Ask or speak to your Smart Tracker Agent…" autocomplete="off" autofocus>
     <button>Send</button>
   </form>
 </div>
@@ -737,6 +789,17 @@ function renderReply(b, parts) {
     if (!renderSurface(a2ui, b)) b.appendChild(el("div", null, flattenText(a2ui) || "(no card content)"));
   }
   if (!b.childNodes.length) b.textContent = "(no response)";
+  
+  // Attach Read-out / Sound button for Text-to-Speech
+  const speechText = textStr || flattenText(a2ui);
+  if (speechText) {
+    const ttsBtn = el("button", "tts-btn");
+    ttsBtn.setAttribute("type", "button");
+    ttsBtn.innerHTML = `🔊 Read Out`;
+    ttsBtn.onclick = () => toggleSpeechReadout(speechText, ttsBtn);
+    b.parentNode.appendChild(ttsBtn);
+  }
+
   log.scrollTop = log.scrollHeight;
 }
 
@@ -976,6 +1039,145 @@ form.addEventListener("submit", async (ev) => {
   input.value = "";
   await sendChatMessage(text);
 });
+
+// --- Speech-to-Text (Voice Input) ---
+let recognition = null;
+let isListening = false;
+
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("Speech recognition is not supported in this browser. Please try Chrome, Edge, or Safari.");
+    return null;
+  }
+  const recog = new SpeechRecognition();
+  recog.continuous = false;
+  recog.interimResults = true;
+  recog.lang = "en-US";
+
+  recog.onstart = () => {
+    isListening = true;
+    const btn = document.getElementById("mic-btn");
+    if (btn) btn.classList.add("listening");
+    input.placeholder = "Listening... speak now 🎙️";
+  };
+
+  recog.onresult = (event) => {
+    let transcript = "";
+    for (let i = 0; i < event.results.length; ++i) {
+      transcript += event.results[i][0].transcript;
+    }
+    input.value = transcript;
+    // Auto-detect mode live as speech is transcribed
+    if (currentModeSetting === "auto" && transcript.length >= 4) {
+      const detected = detectModeFromText(transcript);
+      if (detected) switchMode(detected, true);
+    }
+  };
+
+  recog.onerror = (event) => {
+    console.warn("Speech recognition error:", event.error);
+    stopListening();
+  };
+
+  recog.onend = () => {
+    stopListening();
+    // If input received content, submit automatically or leave for user to verify
+    if (input.value.trim().length > 0) {
+      const text = input.value.trim();
+      input.value = "";
+      sendChatMessage(text);
+    }
+  };
+
+  return recog;
+}
+
+function stopListening() {
+  isListening = false;
+  const btn = document.getElementById("mic-btn");
+  if (btn) btn.classList.remove("listening");
+  input.placeholder = "Ask or speak to your Smart Tracker Agent…";
+}
+
+function toggleVoiceInput() {
+  if (!recognition) {
+    recognition = initSpeechRecognition();
+    if (!recognition) return;
+  }
+
+  if (isListening) {
+    recognition.stop();
+    stopListening();
+  } else {
+    try {
+      recognition.start();
+    } catch (err) {
+      console.warn("Error starting speech recognition:", err);
+      recognition = initSpeechRecognition();
+      if (recognition) recognition.start();
+    }
+  }
+}
+
+// --- Text-to-Speech (Talk Back / Sound Read-Out) ---
+let currentUtterance = null;
+let activeTtsBtn = null;
+
+function toggleSpeechReadout(text, btn) {
+  if (!('speechSynthesis' in window)) {
+    alert("Text-to-speech is not supported on this device/browser.");
+    return;
+  }
+
+  // If already speaking this button, stop
+  if (window.speechSynthesis.speaking && activeTtsBtn === btn) {
+    window.speechSynthesis.cancel();
+    btn.innerHTML = `🔊 Read Out`;
+    btn.classList.remove("speaking");
+    activeTtsBtn = null;
+    return;
+  }
+
+  // Stop any other active speech
+  window.speechSynthesis.cancel();
+  if (activeTtsBtn) {
+    activeTtsBtn.innerHTML = `🔊 Read Out`;
+    activeTtsBtn.classList.remove("speaking");
+  }
+
+  // Clean Markdown formatting for pleasant voice reading
+  const cleanText = text
+    .replace(/[#*`_~]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\|/g, ' ')
+    .replace(/<[^>]*>/g, '')
+    .trim();
+
+  currentUtterance = new SpeechSynthesisUtterance(cleanText);
+  currentUtterance.rate = 1.0;
+  currentUtterance.pitch = 1.0;
+  
+  currentUtterance.onstart = () => {
+    btn.innerHTML = `⏹️ Stop Reading`;
+    btn.classList.add("speaking");
+    activeTtsBtn = btn;
+  };
+
+  currentUtterance.onend = () => {
+    btn.innerHTML = `🔊 Read Out`;
+    btn.classList.remove("speaking");
+    activeTtsBtn = null;
+  };
+
+  currentUtterance.onerror = () => {
+    btn.innerHTML = `🔊 Read Out`;
+    btn.classList.remove("speaking");
+    activeTtsBtn = null;
+  };
+
+  window.speechSynthesis.speak(currentUtterance);
+}
 </script>
 </body>
 </html>
