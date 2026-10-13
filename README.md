@@ -2,6 +2,11 @@
 
 > A privacy-conscious, evidence-grounded personal productivity agent powered by **Gemini 3.8 Flash** on Google Cloud Agent Platform.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-059669?style=for-the-badge&logo=googlecloud)](https://smart-tracker-ai-frontend-88951093419.us-central1.run.app)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/MS1904/buildwithgemini-smart-tracker-ai)
+
+🔗 **Live Public Web App**: [https://smart-tracker-ai-frontend-88951093419.us-central1.run.app](https://smart-tracker-ai-frontend-88951093419.us-central1.run.app)
+
 ![Smart Tracker AI Live Demo](./demo.gif)
 
 ---
